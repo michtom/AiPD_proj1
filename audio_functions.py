@@ -87,7 +87,7 @@ def get_silence_thresholds(silence, window_len, overlap_len):
     return vol_threshold, zcr_threshold
 
 
-def get_silence_frames(signal, silence, vol, zcr, vol_threshold, zcr_threshold):
+def get_silence_frames(vol, zcr, vol_threshold, zcr_threshold):
     """
     Returns array indicating which frames are classified as silence (0 is silence, 1 is not)
     """
