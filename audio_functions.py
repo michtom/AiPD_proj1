@@ -60,7 +60,7 @@ def get_volume(signal_array, window_len, overlap_len):
     """
     Return volume array
     """
-    return (get_ste(signal_array, window_len, overlap_len) ** (1 / 2))
+    return get_ste(signal_array, window_len, overlap_len) ** (1 / 2)
 
 
 def get_frame_length(window_len, framerate):
@@ -159,6 +159,30 @@ def plot_lster(signal_array, lster, duration):
 
 
 def get_autocorrelation(signal_array, window_len, overlap_len, l):
+    """
+    Returns autocorrelation array
+    """
+
+    r = []
+
     for i in range(0, len(signal_array) - overlap_len, overlap_len):
-        return None
-    return None
+        s = signal_array[i:i + window_len]
+        r.append(sum(s[0:window_len - l] * s[l:window_len]))
+
+    return r
+
+
+def get_hzcr(signal, zcr, framerate):
+    """
+    Returns lster array
+    """
+
+    onesec_window_width = int(len(zcr) / (len(signal) / framerate))
+    onesec_window_width_ceil = int(np.ceil(len(zcr) / (len(signal) / framerate)))
+    hzcr = []
+    for i in range(0, len(zcr) - onesec_window_width, onesec_window_width):
+        result = sum(np.array(list(map(lambda x: sgn(x), zcr[i:i + onesec_window_width_ceil] - 1.5 * np.mean(
+            zcr[i:i + onesec_window_width_ceil])))) + 1) / (2 * onesec_window_width_ceil)
+        hzcr.append(result)
+
+    return hzcr
