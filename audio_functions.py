@@ -102,6 +102,11 @@ def get_silence_frames(vol, zcr, vol_threshold, zcr_threshold):
     return np.array(silence)
 
 
+def get_voiced_frames(vol, zcr):
+    """Returns array indicating which frames are voiced (1 is voiced, 0 is not)"""
+    return np.where(vol/max(vol) > zcr/max(zcr), 1, 0)
+
+
 def plot_signal(signal, zcr, vol, silence, voiced, framerate):
     duration = len(signal) / framerate
     times = np.linspace(0, duration, len(signal))
