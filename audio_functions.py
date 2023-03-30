@@ -89,15 +89,15 @@ def get_silence_thresholds(silence, window_len, overlap_len):
 
 def get_silence_frames(vol, zcr, vol_threshold, zcr_threshold):
     """
-    Returns array indicating which frames are classified as silence (0 is silence, 1 is not)
+    Returns array indicating which frames are classified as silence (1 is silence, 0 is not)
     """
 
     silence = []
     for i in range(len(vol)):
         if vol[i] <= vol_threshold and zcr[i] <= zcr_threshold:
-            silence.append(0)
-        else:
             silence.append(1)
+        else:
+            silence.append(0)
 
     return np.array(silence)
 
