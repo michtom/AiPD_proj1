@@ -255,7 +255,9 @@ class GUI:
         fig = Figure(figsize=(7, 3), dpi=100)
         plot1 = fig.add_subplot(111)
         if self.lster is not None:
-            plot1.plot(np.linspace(0, self.duration, num=len(self.lster)), self.lster)
+
+            lster_linspace = audio_functions.get_lster_linspace(self.lster, self.duration)
+            plot1.plot(lster_linspace, np.array([[x, x] for x in self.lster]).flatten())
         cmap = ListedColormap(['white', 'red'])
         if self.silence is not None and self.value_red.get() == 1:
             plot1.pcolorfast(plot1.get_xlim(), plot1.get_ylim(), pd.DataFrame(self.silence).values[np.newaxis],
@@ -282,7 +284,8 @@ class GUI:
         fig = Figure(figsize=(7, 3), dpi=100)
         plot1 = fig.add_subplot(111)
         if self.hzcr is not None:
-            plot1.plot(np.linspace(0, self.duration, num=len(self.hzcr)), self.hzcr)
+            hzcr_linspace = audio_functions.get_lster_linspace(self.hzcr, self.duration)
+            plot1.plot(hzcr_linspace, np.array([[x, x] for x in self.hzcr]).flatten())
         cmap = ListedColormap(['white', 'red'])
         if self.silence is not None and self.value_red.get() == 1:
             plot1.pcolorfast(plot1.get_xlim(), plot1.get_ylim(), pd.DataFrame(self.silence).values[np.newaxis],
