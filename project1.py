@@ -37,7 +37,7 @@ class GUI:
         self.volume = None
         self.window = tk.Tk()
         self.window.title("Sound analysing app")
-        self.window.geometry("1200x500+50+50")
+        self.window.geometry("1000x1080+50+50")
         # a button to open and load a desired .wav file
         ttk.Label(self.window, text="Upload a .wav file").grid(row=0, column=0)
         button = ttk.Button(self.window, text="Open", command=self.open_file)
@@ -45,28 +45,29 @@ class GUI:
         # a button to choose a plot to be displayed
         ttk.Label(self.window, text="Select plot to be shown").grid(row=0, column=4)
         self.var_plot = tk.IntVar()
-        self.var_plot.set(1)
-        ttk.Radiobutton(self.window, text="basic plot",
-                        variable=self.var_plot, value=1, command=self.choose_plot).grid(row=1, column=4, sticky="we")
+        self.var_plot.set(2)
+#        ttk.Radiobutton(self.window, text="basic plot",
+#                        variable=self.var_plot, value=1, command=self.choose_plot).grid(row=1, column=4, sticky="we")
         ttk.Radiobutton(self.window, text="volume plot",
-                        variable=self.var_plot, value=2, command=self.choose_plot).grid(row=2, column=4, sticky="we")
+                        variable=self.var_plot, value=2, command=self.choose_plot).grid(row=1, column=4, sticky="we")
         ttk.Radiobutton(self.window, text="ZCR plot",
-                        variable=self.var_plot, value=3, command=self.choose_plot).grid(row=3, column=4, sticky="we")
+                        variable=self.var_plot, value=3, command=self.choose_plot).grid(row=2, column=4, sticky="we")
         ttk.Radiobutton(self.window, text="STE plot",
-                        variable=self.var_plot, value=4, command=self.choose_plot).grid(row=4, column=4, sticky="we")
+                        variable=self.var_plot, value=4, command=self.choose_plot).grid(row=3, column=4, sticky="we")
         ttk.Radiobutton(self.window, text="LSTER plot",
-                        variable=self.var_plot, value=5, command=self.choose_plot).grid(row=5, column=4, sticky="we")
+                        variable=self.var_plot, value=5, command=self.choose_plot).grid(row=4, column=4, sticky="we")
         ttk.Radiobutton(self.window, text="HZCR plot",
-                        variable=self.var_plot, value=6, command=self.choose_plot).grid(row=6, column=4, sticky="we")
+                        variable=self.var_plot, value=6, command=self.choose_plot).grid(row=5, column=4, sticky="we")
+        self.plot_basic()
         self.choose_plot()
         # a button to choose which parameter should be marked as red background on a plot
         self.value_red = tk.IntVar()
-        self.value_red.set(1)
-        ttk.Label(self.window, text="Select value to be displayed in red").grid(row=7, column=4)
+        self.value_red.set(2)
+        ttk.Label(self.window, text="Select value to be displayed in red").grid(row=10, column=4)
         ttk.Radiobutton(self.window, text="silence",
-                        variable=self.value_red, value=1, command=self.choose_plot).grid(row=8, column=4, sticky="we")
+                        variable=self.value_red, value=1, command=self.choose_plot).grid(row=11, column=4, sticky="we")
         ttk.Radiobutton(self.window, text="voiced frames",
-                        variable=self.value_red, value=2, command=self.choose_plot).grid(row=9, column=4, sticky="we")
+                        variable=self.value_red, value=2, command=self.choose_plot).grid(row=12, column=4, sticky="we")
         self.window.mainloop()
 
     def open_file(self):
@@ -110,16 +111,18 @@ class GUI:
         vol_treshold = 10e-3
         zcr_treshold = 0.1
         self.silence = audio_functions.get_silence_frames(self.volume, self.zcr, vol_treshold, zcr_treshold)
+        self.plot_basic()
         self.choose_plot()
 
     def choose_plot(self):
         """
         a function that calls a correct plotting function, based on a choice from a button
         """
+        self.plot_basic()
         value = self.var_plot.get()
-        if value == 1:
-            self.plot_basic()
-        elif value == 2:
+#        if value == 1:
+#            self.plot_basic()
+        if value == 2:
             self.plot_volume()
         elif value == 3:
             self.plot_zcr()
@@ -135,7 +138,7 @@ class GUI:
         """
         a function that plots amplitudes of a .wav file
         """
-        fig = Figure(figsize=(8, 4), dpi=100)
+        fig = Figure(figsize=(7, 3), dpi=100)
         plot1 = fig.add_subplot(111)
         if self.times is not None and self.audio_normalised is not None:
             plot1.plot(self.times, self.audio_normalised)
@@ -148,15 +151,14 @@ class GUI:
         if self.voiced is not None and self.value_red.get() == 2:
             plot1.pcolorfast(plot1.get_xlim(), plot1.get_ylim(), pd.DataFrame(self.voiced).values[np.newaxis],
                              cmap=cmap, alpha=0.4)
+        plot1.xaxis.set_label_position('top')
         plot1.set_ylabel("Amplitude")
         plot1.set_xlabel("Time (s)")
-        #        if self.duration is not None:
-        #            plot1.set_xticks(np.linspace(0, self.duration, 10).astype(int).tolist())
         canvas = FigureCanvasTkAgg(fig, master=self.window)
         canvas.draw()
-        canvas.get_tk_widget().grid(row=1, column=1, rowspan=8, columnspan=3, padx=10, pady=10, sticky="nsew")
+        canvas.get_tk_widget().grid(row=1, column=1, rowspan=6, columnspan=3, padx=10, pady=10, sticky="nsew")
         toolbar_frame = Frame(master=self.window)
-        toolbar_frame.grid(row=9, column=1)
+        toolbar_frame.grid(row=7, column=1)
         toolbar = Toolbar(canvas, toolbar_frame)
         toolbar.update()
         canvas.get_tk_widget().grid(row=1, column=1)
@@ -165,7 +167,7 @@ class GUI:
         """
         a function that plots volume of a sound
         """
-        fig = Figure(figsize=(8, 4), dpi=100)
+        fig = Figure(figsize=(7, 3), dpi=100)
         plot1 = fig.add_subplot(111)
         if self.volume is not None:
             xaxis = np.linspace(0, self.duration, num=len(self.volume))
@@ -180,20 +182,21 @@ class GUI:
                              cmap=cmap, alpha=0.4)
         plot1.set_ylabel("Volume")
         plot1.set_xlabel("Time (s)")
+        plot1.xaxis.set_label_position('top')
         canvas = FigureCanvasTkAgg(fig, master=self.window)
         canvas.draw()
-        canvas.get_tk_widget().grid(row=1, column=1, rowspan=8, columnspan=3, pady=10, padx=10, sticky="nsew")
+        canvas.get_tk_widget().grid(row=10, column=10, rowspan=8, columnspan=3, pady=10, padx=10, sticky="nsew")
         toolbar_frame = Frame(master=self.window)
-        toolbar_frame.grid(row=9, column=1)
+        toolbar_frame.grid(row=18, column=1)
         toolbar = Toolbar(canvas, toolbar_frame)
         toolbar.update()
-        canvas.get_tk_widget().grid(row=1, column=1)
+        canvas.get_tk_widget().grid(row=10, column=1)
 
     def plot_zcr(self):
         """
         a function that plots Zero-crossing rate of a sound
         """
-        fig = Figure(figsize=(8, 4), dpi=100)
+        fig = Figure(figsize=(7, 3), dpi=100)
         plot1 = fig.add_subplot(111)
         if self.zcr is not None:
             xaxis = np.linspace(0, self.duration, num=len(self.zcr))
@@ -208,20 +211,21 @@ class GUI:
                              cmap=cmap, alpha=0.4)
         plot1.set_ylabel("Zero-crossing rate")
         plot1.set_xlabel("Time (s)")
+        plot1.xaxis.set_label_position('top')
         canvas = FigureCanvasTkAgg(fig, master=self.window)
         canvas.draw()
-        canvas.get_tk_widget().grid(row=1, column=1, rowspan=8, columnspan=3, pady=10, padx=10)
+        canvas.get_tk_widget().grid(row=10, column=1, rowspan=8, columnspan=3, pady=10, padx=10)
         toolbar_frame = Frame(master=self.window)
-        toolbar_frame.grid(row=9, column=1)
+        toolbar_frame.grid(row=18, column=1)
         toolbar = Toolbar(canvas, toolbar_frame)
         toolbar.update()
-        canvas.get_tk_widget().grid(row=1, column=1)
+        canvas.get_tk_widget().grid(row=10, column=1)
 
     def plot_ste(self):
         """
         a function that plots short-time energy of a sound
         """
-        fig = Figure(figsize=(8, 4), dpi=100)
+        fig = Figure(figsize=(7, 3), dpi=100)
         plot1 = fig.add_subplot(111)
         if self.ste is not None:
             plot1.plot(np.linspace(0, self.duration, num=len(self.ste)), self.ste)
@@ -234,20 +238,21 @@ class GUI:
                              cmap=cmap, alpha=0.4)
         plot1.set_ylabel("Short-time energy")
         plot1.set_xlabel("Time (s)")
+        plot1.xaxis.set_label_position('top')
         canvas = FigureCanvasTkAgg(fig, master=self.window)
         canvas.draw()
-        canvas.get_tk_widget().grid(row=1, column=1, rowspan=8, columnspan=3, pady=10, padx=10)
+        canvas.get_tk_widget().grid(row=10, column=1, rowspan=8, columnspan=3, pady=10, padx=10)
         toolbar_frame = Frame(master=self.window)
-        toolbar_frame.grid(row=9, column=1)
+        toolbar_frame.grid(row=18, column=1)
         toolbar = NavigationToolbar2Tk(canvas, toolbar_frame)
         toolbar.update()
-        canvas.get_tk_widget().grid(row=1, column=1)
+        canvas.get_tk_widget().grid(row=10, column=1)
 
     def plot_lster(self):
         """
         a function that plots low short-time energy rate of a sound
         """
-        fig = Figure(figsize=(8, 4), dpi=100)
+        fig = Figure(figsize=(7, 3), dpi=100)
         plot1 = fig.add_subplot(111)
         if self.lster is not None:
             plot1.plot(np.linspace(0, self.duration, num=len(self.lster)), self.lster)
@@ -260,20 +265,21 @@ class GUI:
                              cmap=cmap, alpha=0.4)
         plot1.set_ylabel("Low Short-time energy ratio")
         plot1.set_xlabel("Time (s)")
+        plot1.xaxis.set_label_position('top')
         canvas = FigureCanvasTkAgg(fig, master=self.window)
         canvas.draw()
-        canvas.get_tk_widget().grid(row=1, column=1, rowspan=8, columnspan=3, pady=10, padx=10)
+        canvas.get_tk_widget().grid(row=10, column=1, rowspan=8, columnspan=3, pady=10, padx=10)
         toolbar_frame = Frame(master=self.window)
-        toolbar_frame.grid(row=9, column=1)
+        toolbar_frame.grid(row=18, column=1)
         toolbar = NavigationToolbar2Tk(canvas, toolbar_frame)
         toolbar.update()
-        canvas.get_tk_widget().grid(row=1, column=1)
+        canvas.get_tk_widget().grid(row=10, column=1)
 
     def plot_hzcr(self):
         """
         a function that plots low short-time energy rate of a sound
         """
-        fig = Figure(figsize=(8, 4), dpi=100)
+        fig = Figure(figsize=(7, 3), dpi=100)
         plot1 = fig.add_subplot(111)
         if self.hzcr is not None:
             plot1.plot(np.linspace(0, self.duration, num=len(self.hzcr)), self.hzcr)
@@ -286,14 +292,15 @@ class GUI:
                              cmap=cmap, alpha=0.4)
         plot1.set_ylabel("High zero crossing rate")
         plot1.set_xlabel("Time (s)")
+        plot1.xaxis.set_label_position('top')
         canvas = FigureCanvasTkAgg(fig, master=self.window)
         canvas.draw()
-        canvas.get_tk_widget().grid(row=1, column=1, rowspan=8, columnspan=3, pady=10, padx=10)
+        canvas.get_tk_widget().grid(row=10, column=1, rowspan=8, columnspan=3, pady=10, padx=10)
         toolbar_frame = Frame(master=self.window)
-        toolbar_frame.grid(row=9, column=1)
+        toolbar_frame.grid(row=18, column=1)
         toolbar = NavigationToolbar2Tk(canvas, toolbar_frame)
         toolbar.update()
-        canvas.get_tk_widget().grid(row=1, column=1)
+        canvas.get_tk_widget().grid(row=10, column=1)
 
 
 def main():
