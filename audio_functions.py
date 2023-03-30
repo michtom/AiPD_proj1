@@ -149,6 +149,7 @@ def sgn(x):
 
 
 def get_lster_linspace(lster, duration):
+
     times2 = [[x, x + 0.01] for x in range(1, len(lster))]
     times2 = np.array(times2).flatten()
     times2 = list(times2)

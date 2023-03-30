@@ -250,6 +250,7 @@ class GUI:
         fig = Figure(figsize=(8, 4), dpi=100)
         plot1 = fig.add_subplot(111)
         if self.lster is not None:
+
             lster_linspace = audio_functions.get_lster_linspace(self.lster, self.duration)
             plot1.plot(lster_linspace, np.array([[x, x] for x in self.lster]).flatten())
         cmap = ListedColormap(['white', 'red'])
