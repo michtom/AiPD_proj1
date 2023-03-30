@@ -23,6 +23,8 @@ class Toolbar(NavigationToolbar2Tk):
 class GUI:
 
     def __init__(self):
+        self.channel_label = None
+        self.length_label = None
         self.hzcr = None
         self.lster = None
         self.voiced = None
@@ -87,14 +89,18 @@ class GUI:
         window_len = audio_functions.get_window_len(file)
         overlap_len = int(window_len / 2)
         self.audio_normalised, something = audio_functions.cut_file(file, 0, frames)
-        ttk.Label(self.window,
-                  text="Length: " + str(self.duration) + "s").grid(row=2, column=0, pady=5, padx=2)
         channel_num = file.getnchannels()
-        if channel_num > 1:
-            ttk.Label(self.window, text="Choosing channel 1").grid(row=4, column=0, pady=5, padx=2)
-            self.audio_normalised = self.audio_normalised[1::channel_num]
-        ttk.Label(self.window,
-                  text="No. of channels: " + str(channel_num)).grid(row=3, column=0, pady=5, padx=2)
+        if self.length_label is None:
+            self.length_label = ttk.Label(self.window, text="Length: " + str(self.duration) + "s")
+            self.length_label.grid(row=2, column=0, pady=5, padx=2)
+            self.channel_label = ttk.Label(self.window, text="No. of channels: " + str(channel_num))
+            self.channel_label.grid(row=3, column=0, pady=5, padx=2)
+            if channel_num > 1:
+                ttk.Label(self.window, text="Choosing channel 1").grid(row=4, column=0, pady=5, padx=2)
+                self.audio_normalised = self.audio_normalised[1::channel_num]
+        else:
+            self.length_label.config(text="Length: " + str(self.duration) + "s")
+            self.channel_label.config(text="No. of channels: " + str(channel_num))
         self.zcr = audio_functions.get_zcr(self.audio_normalised, window_len, overlap_len)
         self.volume = audio_functions.get_volume(self.audio_normalised, window_len, overlap_len)
         self.ste = audio_functions.get_ste(self.audio_normalised, window_len, overlap_len)
