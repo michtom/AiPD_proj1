@@ -132,7 +132,7 @@ def get_lster(signal, ste, framerate):
     onesec_window_width_ceil = int(np.ceil(len(ste) / (len(signal) / framerate)))
     lster = []
     for i in range(0, len(ste) - onesec_window_width, onesec_window_width):
-        result = sum(np.array(list(map(lambda x: sgn(x), ste[i:i + onesec_window_width_ceil] - 0.5 * np.mean(
+        result = sum(np.array(list(map(lambda x: sgn(x), -ste[i:i + onesec_window_width_ceil] + 0.5 * np.mean(
             ste[i:i + onesec_window_width_ceil])))) + 1) / (2 * onesec_window_width_ceil)
         lster.append(result)
 
@@ -146,6 +146,17 @@ def sgn(x):
         return 0
     else:
         return -1
+
+
+def get_lster_linspace(lster, duration):
+    times2 = [[x, x + 0.01] for x in range(1, len(lster))]
+    times2 = np.array(times2).flatten()
+    times2 = list(times2)
+    times2.insert(0, 0)
+    times2.append(duration)
+    times2 = np.array(times2)
+
+    return times2
 
 
 def plot_lster(signal_array, lster, duration):
