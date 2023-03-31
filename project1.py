@@ -108,8 +108,8 @@ class GUI:
         self.voiced = audio_functions.get_voiced_frames(self.volume, self.zcr)
         self.lster = audio_functions.get_lster(self.audio_normalised, self.ste, rate)
         self.hzcr = audio_functions.get_hzcr(self.audio_normalised, self.zcr, rate)
-        vol_treshold = 10e-3
-        zcr_treshold = 0.1
+        vol_treshold = 0.0027779313126452465
+        zcr_treshold = 0.13151927437641722
         self.silence = audio_functions.get_silence_frames(self.volume, self.zcr, vol_treshold, zcr_treshold)
         self.plot_basic()
         self.choose_plot()

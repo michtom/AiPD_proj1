@@ -203,3 +203,19 @@ def get_hzcr(signal, zcr, framerate):
         hzcr.append(result)
 
     return hzcr
+
+
+def get_fundamental_freq(signal_array, window_len, overlap_len, framerate):
+    f0_low = int(framerate/400)
+    f0_high = int(framerate/50)
+
+    f0 = []
+
+    for i in range(0, len(signal_array)-2*overlap_len, overlap_len):
+        s = signal_array[i:i+window_len]
+        f0_frame = []
+        for l in range(f0_low, f0_high):
+            f0_frame.append(sum(s[0:window_len-l]*s[l:window_len]))
+        f0.append(np.argmax(f0_frame)+f0_low)
+
+    return f0
