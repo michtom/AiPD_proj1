@@ -24,6 +24,10 @@ class Toolbar(NavigationToolbar2Tk):
 class GUI:
 
     def __init__(self):
+        self.frame_length = None
+        self.audio_freq = None
+        self.plot_whole = None
+        self.scaler = None
         self.rate = None
         self.window_len = None
         self.overlap_len = None
@@ -84,25 +88,25 @@ class GUI:
         self.var_plot_freq.set(2)
         ttk.Radiobutton(self.tab2, text="volume plot",
                         variable=self.var_plot_freq, value=2, command=self.choose_plot_freq).grid(row=1, column=4,
-                                                                                             sticky="we")
+                                                                                                  sticky="we")
         ttk.Radiobutton(self.tab2, text="FC plot",
                         variable=self.var_plot_freq, value=3, command=self.choose_plot_freq).grid(row=2, column=4,
-                                                                                             sticky="we")
+                                                                                                  sticky="we")
         ttk.Radiobutton(self.tab2, text="BW plot",
                         variable=self.var_plot_freq, value=4, command=self.choose_plot_freq).grid(row=3, column=4,
-                                                                                             sticky="we")
+                                                                                                  sticky="we")
         ttk.Radiobutton(self.tab2, text="BE plot",
                         variable=self.var_plot_freq, value=5, command=self.choose_plot_freq).grid(row=4, column=4,
-                                                                                             sticky="we")
+                                                                                                  sticky="we")
         ttk.Radiobutton(self.tab2, text="BER (ERSB) plot",
                         variable=self.var_plot_freq, value=6, command=self.choose_plot_freq).grid(row=5, column=4,
-                                                                                             sticky="we")
+                                                                                                  sticky="we")
         ttk.Radiobutton(self.tab2, text="SFM plot",
                         variable=self.var_plot_freq, value=7, command=self.choose_plot_freq).grid(row=6, column=4,
-                                                                                             sticky="we")
+                                                                                                  sticky="we")
         ttk.Radiobutton(self.tab2, text="SCF plot",
                         variable=self.var_plot_freq, value=8, command=self.choose_plot_freq).grid(row=7, column=4,
-                                                                                             sticky="we")
+                                                                                                  sticky="we")
         #        ttk.Checkbutton(self.tab2, text="Calculate fundamental frequency",
         #                        variable=self.calc_freq, command=self.calc_fund_freq,
         #                        onvalue=1, offvalue=0).grid(row=7, column=4, sticky="we")
@@ -159,19 +163,55 @@ class GUI:
         self.voiced = audio_functions.get_voiced_frames(self.volume, self.zcr)
         self.lster = audio_functions.get_lster(self.audio_normalised, self.ste, self.rate)
         self.hzcr = audio_functions.get_hzcr(self.audio_normalised, self.zcr, self.rate)
-
+        # for choosing a frame with custom length to be plotted:
+        self.audio_freq = self.audio_normalised
+        scale_limit = len(self.audio_normalised) if self.audio_normalised is not None else 100
+        ttk.Label(self.tab2, text="Select frame to be plotted").grid(row=8, column=4, sticky="we")
+        self.scaler = tk.Scale(self.tab2, from_=0, to=scale_limit, orient="horizontal")
+        self.scaler.bind("<ButtonRelease-1>", self.choose_frame)
+        self.scaler.grid(row=9, column=4, sticky="we")
+        ttk.Label(self.tab2, text="Choose a length of a frame").grid(row=10, column=4, sticky="we")
+        self.frame_length = ttk.Entry(self.tab2)
+        self.frame_length.insert(0, "2048")
+        self.frame_length.grid(row=11, column=4, sticky="we")
+        ttk.Button(self.tab2, text="Apply", command=self.validate).grid(row=12, column=4, sticky="we")
+        self.plot_whole = tk.IntVar()
+        self.plot_whole.set(1)
+        ttk.Checkbutton(self.tab2, text="Plot whole audio signal",
+                        variable=self.plot_whole, command=self.choose_frame_temp,
+                        onvalue=1, offvalue=0).grid(row=13, column=4, sticky="we")
         vol_treshold = 0.0027779313126452465
         zcr_treshold = 0.13151927437641722
         self.silence = audio_functions.get_silence_frames(self.volume, self.zcr, vol_treshold, zcr_treshold)
         self.plot_basic()
         self.plot_basic_freq()
         self.choose_plot()
+        self.choose_plot_freq()
 
     def calc_fund_freq(self):
         if self.calc_freq.get() == 1:
             self.fund_freq = audio_functions.get_fundamental_freq(self.audio_normalised, self.window_len,
                                                                   self.overlap_len, self.rate)
             self.choose_plot()
+
+    def validate(self):
+        # to_do
+        self.choose_frame(event=None)
+
+    def choose_frame_temp(self):
+        # necessary as Slider widget passes an event argument when calling a method in 'command='
+        self.choose_frame(event=None)
+
+    def choose_frame(self, event):
+        if self.plot_whole.get() == 1:
+            self.scaler.configure(state="disabled")
+            self.audio_freq = self.audio_normalised
+        else:
+            self.scaler.configure(state="active")
+            from_ = self.scaler.get()
+            to = from_ + int(self.frame_length.get())
+            self.audio_freq = self.audio_normalised[from_:to]
+        self.plot_basic_freq()
 
     def choose_plot(self):
         """
@@ -213,7 +253,7 @@ class GUI:
             self.plot_ber()
         elif value == 7:
             self.plot_sfm()
-        elif value == 7:
+        elif value == 8:
             self.plot_scf()
         return
 
@@ -252,9 +292,10 @@ class GUI:
         """
         fig = Figure(figsize=(7, 3), dpi=100)
         plot1 = fig.add_subplot(111)
-        if self.times is not None and self.audio_normalised is not None:
-            plot1.plot(self.times, self.audio_normalised)
-            plot1.set_xlim([0, max(self.times)])
+        if self.times is not None and self.audio_freq is not None:
+            plot1.plot(self.audio_freq)
+        #            plot1.plot(self.times, self.audio_freq)
+        #            plot1.set_xlim([0, max(self.times)])
         # choose parameter displayed as red background, based on choice from a button (used in every plotting function)
         cmap = ListedColormap(['white', 'red'])
         if self.silence is not None and self.value_red.get() == 1:
