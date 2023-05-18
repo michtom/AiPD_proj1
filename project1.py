@@ -9,6 +9,8 @@ from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg, NavigationTool
 from matplotlib.colors import ListedColormap
 import audio_functions
 from audio_functions import *
+import window_functions
+from window_functions import *
 import pandas as pd
 
 
@@ -24,6 +26,7 @@ class Toolbar(NavigationToolbar2Tk):
 class GUI:
 
     def __init__(self):
+        self.audio_windowed = None
         self.frame_length = None
         self.audio_freq = None
         self.plot_whole = None
@@ -128,17 +131,25 @@ class GUI:
         ttk.Radiobutton(self.tab1, text="voiced frames",
                         variable=self.value_red, value=2, command=self.choose_plot).grid(row=12, column=4, sticky="we")
         # window functions
+        self.window_type = tk.IntVar()
+        self.window_type.set(2)
+        self.plot_window_time()
+        self.choose_window()
         ttk.Radiobutton(self.tab3, text="Rectangular",
-                        variable=self.var_plot, value=2, command=self.choose_plot).grid(row=1, column=4, sticky="we")
+                        variable=self.window_type, value=2, command=self.choose_window).grid(row=1, column=4,
+                                                                                             sticky="we")
         ttk.Radiobutton(self.tab3, text="Triangular",
-                        variable=self.var_plot, value=3, command=self.choose_plot).grid(row=2, column=4, sticky="we")
+                        variable=self.window_type, value=3, command=self.choose_window).grid(row=2, column=4,
+                                                                                             sticky="we")
         ttk.Radiobutton(self.tab3, text="Hamming",
-                        variable=self.var_plot, value=4, command=self.choose_plot).grid(row=3, column=4, sticky="we")
+                        variable=self.window_type, value=4, command=self.choose_window).grid(row=3, column=4,
+                                                                                             sticky="we")
         ttk.Radiobutton(self.tab3, text="van Hann",
-                        variable=self.var_plot, value=5, command=self.choose_plot).grid(row=4, column=4, sticky="we")
+                        variable=self.window_type, value=5, command=self.choose_window).grid(row=4, column=4,
+                                                                                             sticky="we")
         ttk.Radiobutton(self.tab3, text="Blackman",
-                        variable=self.var_plot, value=6, command=self.choose_plot).grid(row=5, column=4, sticky="we")
-
+                        variable=self.window_type, value=6, command=self.choose_window).grid(row=5, column=4,
+                                                                                             sticky="we")
         self.window.mainloop()
 
     def open_file(self):
@@ -258,7 +269,7 @@ class GUI:
         """
         a function that calls a correct plotting function, based on a choice from a button
         """
-        self.plot_basic()
+        self.plot_basic_freq()
         value = self.var_plot_freq.get()
         if value == 2:
             self.plot_volume_freq()
@@ -277,7 +288,9 @@ class GUI:
         return
 
     def choose_window(self):
-        pass
+        value = self.window_type.get()
+        self.audio_windowed = window_functions.get_windowed_audio(self.audio_normalised, self.window_len, value)
+        self.plot_window_time()
 
     def plot_basic(self):
         """
@@ -314,17 +327,20 @@ class GUI:
         """
         fig = Figure(figsize=(7, 3), dpi=100)
         plot1 = fig.add_subplot(111)
-        if self.times is not None and self.audio_freq is not None:
-            plot1.plot(self.audio_freq)
+        if self.times is not None and self.audio_normalised is not None:
+            plot1.plot(self.audio_normalised)
         #            plot1.plot(self.times, self.audio_freq)
         #            plot1.set_xlim([0, max(self.times)])
         # choose parameter displayed as red background, based on choice from a button (used in every plotting function)
         cmap = ListedColormap(['white', 'red'])
-        if self.silence is not None and self.value_red.get() == 1:
-            plot1.pcolorfast(plot1.get_xlim(), plot1.get_ylim(), pd.DataFrame(self.silence).values[np.newaxis],
-                             cmap=cmap, alpha=0.4)
-        if self.voiced is not None and self.value_red.get() == 2:
-            plot1.pcolorfast(plot1.get_xlim(), plot1.get_ylim(), pd.DataFrame(self.voiced).values[np.newaxis],
+        if self.plot_whole is not None and self.plot_whole.get() == 0:
+            green_marked = [0 for i in range(len(self.audio_normalised))]
+            for i in range(len(self.audio_normalised)):
+                if self.scaler.get() <= i <= self.scaler.get()+int(self.frame_length.get()):
+                    green_marked[i] = 1
+                else:
+                    green_marked[i] = 0
+            plot1.pcolorfast(plot1.get_xlim(), plot1.get_ylim(), pd.DataFrame(green_marked).values[np.newaxis],
                              cmap=cmap, alpha=0.4)
         plot1.xaxis.set_label_position('top')
         plot1.set_ylabel("Amplitude")
@@ -710,7 +726,28 @@ class GUI:
         canvas.get_tk_widget().grid(row=10, column=1)
 
     def plot_window_time(self):
-        pass
+        """
+        a function that plots amplitudes of a .wav file
+        """
+        fig = Figure(figsize=(7, 3), dpi=100)
+        plot1 = fig.add_subplot(111)
+        if self.times is not None and self.audio_windowed is not None:
+            plot1.plot(self.audio_windowed)
+        #            plot1.plot(self.times, self.audio_freq)
+        #            plot1.set_xlim([0, max(self.times)])
+        # choose parameter displayed as red background, based on choice from a button (used in every plotting function)
+        cmap = ListedColormap(['white', 'red'])
+        plot1.xaxis.set_label_position('top')
+        plot1.set_ylabel("Amplitude")
+        plot1.set_xlabel("Time (s)")
+        canvas = FigureCanvasTkAgg(fig, master=self.tab3)
+        canvas.draw()
+        canvas.get_tk_widget().grid(row=1, column=1, rowspan=6, columnspan=3, padx=10, pady=10, sticky="nsew")
+        toolbar_frame = Frame(master=self.tab3)
+        toolbar_frame.grid(row=7, column=1)
+        toolbar = Toolbar(canvas, toolbar_frame)
+        toolbar.update()
+        canvas.get_tk_widget().grid(row=1, column=1)
 
     def plot_window_freq(self):
         pass
