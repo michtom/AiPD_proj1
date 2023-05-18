@@ -58,11 +58,14 @@ class GUI:
         # a button to open and load a desired .wav file
         ttk.Label(self.tab1, text="Upload a .wav file").grid(row=0, column=0)
         ttk.Label(self.tab2, text="Upload a .wav file").grid(row=0, column=0)
+        ttk.Label(self.tab3, text="Upload a .wav file").grid(row=0, column=0)
         ttk.Button(self.tab1, text="Open", command=self.open_file).grid(row=1, column=0, padx=5, pady=5)
         ttk.Button(self.tab2, text="Open", command=self.open_file).grid(row=1, column=0, padx=5, pady=5)
+        ttk.Button(self.tab3, text="Open", command=self.open_file).grid(row=1, column=0, padx=5, pady=5)
         # a button to choose a plot to be displayed
         ttk.Label(self.tab1, text="Select plot to be shown").grid(row=0, column=4)
         ttk.Label(self.tab2, text="Select plot to be shown").grid(row=0, column=4)
+        ttk.Label(self.tab2, text="Select a window function to be shown on plots").grid(row=0, column=4)
         self.calc_freq = tk.IntVar()
         self.calc_freq.set(0)
         #        ttk.Radiobutton(self.window, text="basic plot",
@@ -124,7 +127,18 @@ class GUI:
                         variable=self.value_red, value=1, command=self.choose_plot).grid(row=11, column=4, sticky="we")
         ttk.Radiobutton(self.tab1, text="voiced frames",
                         variable=self.value_red, value=2, command=self.choose_plot).grid(row=12, column=4, sticky="we")
-        ttk.Label(self.tab2, text="TODO").grid(row=1, column=1)
+        # window functions
+        ttk.Radiobutton(self.tab3, text="Rectangular",
+                        variable=self.var_plot, value=2, command=self.choose_plot).grid(row=1, column=4, sticky="we")
+        ttk.Radiobutton(self.tab3, text="Triangular",
+                        variable=self.var_plot, value=3, command=self.choose_plot).grid(row=2, column=4, sticky="we")
+        ttk.Radiobutton(self.tab3, text="Hamming",
+                        variable=self.var_plot, value=4, command=self.choose_plot).grid(row=3, column=4, sticky="we")
+        ttk.Radiobutton(self.tab3, text="van Hann",
+                        variable=self.var_plot, value=5, command=self.choose_plot).grid(row=4, column=4, sticky="we")
+        ttk.Radiobutton(self.tab3, text="Blackman",
+                        variable=self.var_plot, value=6, command=self.choose_plot).grid(row=5, column=4, sticky="we")
+
         self.window.mainloop()
 
     def open_file(self):
@@ -261,6 +275,9 @@ class GUI:
         elif value == 8:
             self.plot_scf()
         return
+
+    def choose_window(self):
+        pass
 
     def plot_basic(self):
         """
@@ -691,6 +708,12 @@ class GUI:
         toolbar = Toolbar(canvas, toolbar_frame)
         toolbar.update()
         canvas.get_tk_widget().grid(row=10, column=1)
+
+    def plot_window_time(self):
+        pass
+
+    def plot_window_freq(self):
+        pass
 
 
 def main():
