@@ -2,7 +2,7 @@ import numpy as np
 import tkinter as tk
 from tkinter import ttk
 from tkinter import filedialog as fd
-from tkinter import Frame
+from tkinter import Frame, messagebox
 import wave
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg, NavigationToolbar2Tk)
@@ -50,8 +50,10 @@ class GUI:
         self.window.geometry("1200x1080+50+50")
         self.tab1 = ttk.Frame(self.tabs)
         self.tab2 = ttk.Frame(self.tabs)
+        self.tab3 = ttk.Frame(self.tabs)
         self.tabs.add(self.tab1, text="Time domain")
         self.tabs.add(self.tab2, text="Frequency domain")
+        self.tabs.add(self.tab3, text="Window functions")
         self.tabs.grid(row=0, column=0, padx=5, pady=5)
         # a button to open and load a desired .wav file
         ttk.Label(self.tab1, text="Upload a .wav file").grid(row=0, column=0)
@@ -195,8 +197,11 @@ class GUI:
             self.choose_plot()
 
     def validate(self):
-        # to_do
-        self.choose_frame(event=None)
+        value = self.frame_length.get()
+        if not value.isnumeric():
+            messagebox.showerror("Error", "Entry must be a number!")
+        else:
+            self.choose_frame(event=None)
 
     def choose_frame_temp(self):
         # necessary as Slider widget passes an event argument when calling a method in 'command='
