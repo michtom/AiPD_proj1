@@ -43,6 +43,14 @@ def get_effective_bandwidth(spectrum, fc):
 
     return bw
 
+def get_band_energy(spectrum, f0, f1):
+    be = []
+    for x in spectrum:
+        idxs = np.where((x[1]>f0)&(x[1]<f1))
+        be.append(np.mean(x[0][idxs]))
+
+    return be
+
 def get_sfm(spectrum, lb, hb):
     sfm = []
     for x in spectrum:
