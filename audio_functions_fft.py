@@ -7,9 +7,9 @@ from scipy.stats import gmean
 def get_frames(signal_array, window_len, overlap_len):
     overlap_len = int(overlap_len)
     signal_array = list(signal_array)
-    signal_array.extend([0 for _ in range(len(signal_array)%overlap_len)])
+    signal_array.extend([0 for _ in range(overlap_len-(len(signal_array)%overlap_len))])
     signal_array = np.array(signal_array)
-    frames  = []
+    frames = []
     for i in range(0, len(signal_array)-overlap_len, overlap_len):
         frames.append(signal_array[i:i+window_len])
 
