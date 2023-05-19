@@ -71,3 +71,13 @@ def plot_frames(data, title):
     plt.plot(data)
     plt.xlabel("n")
     plt.title(title)
+
+def plot_spectrum(signal, start, end, framerate):
+    start_index = int((start/1000)*framerate)
+    end_index = int((end/1000)*framerate)
+    signal = signal[start_index:end_index]
+    spectrum = create_spectrum(signal, framerate)
+    plt.plot(spectrum[1], spectrum[0])
+    plt.title("Spectrum")
+    plt.xlabel("freq")
+    plt.ylabel("magnitude")
