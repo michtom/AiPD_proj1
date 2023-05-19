@@ -51,6 +51,11 @@ def get_band_energy(spectrum, f0, f1):
 
     return be
 
+def get_band_energy_ratio(spectrum, f0, f1):
+    be = get_band_energy(spectrum, f0, f1)
+    vol = get_f_volume(spectrum)
+    return [i/j for i, j in zip(be,vol)]
+
 def get_sfm(spectrum, lb, hb):
     sfm = []
     for x in spectrum:

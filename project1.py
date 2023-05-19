@@ -9,6 +9,8 @@ from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg, NavigationTool
 from matplotlib.colors import ListedColormap
 import audio_functions
 from audio_functions import *
+import audio_functions_fft
+from audio_functions_fft import *
 import window_functions
 from window_functions import *
 import pandas as pd
@@ -26,6 +28,16 @@ class Toolbar(NavigationToolbar2Tk):
 class GUI:
 
     def __init__(self):
+        self.ber = None
+        self.be = None
+        self.spectrum_plot = None
+        self.scf = None
+        self.sfm = None
+        self.bw = None
+        self.fc = None
+        self.volume_freq = None
+        self.spectrum = None
+        self.audio_frames = None
         self.audio_windowed = None
         self.frame_length = None
         self.audio_freq = None
@@ -50,7 +62,7 @@ class GUI:
         self.window = tk.Tk()
         self.tabs = ttk.Notebook(self.window)
         self.window.title("Sound analysing app")
-        self.window.geometry("1200x1080+50+50")
+        self.window.geometry("1300x1080+50+50")
         self.tab1 = ttk.Frame(self.tabs)
         self.tab2 = ttk.Frame(self.tabs)
         self.tab3 = ttk.Frame(self.tabs)
@@ -93,27 +105,30 @@ class GUI:
                         onvalue=1, offvalue=0).grid(row=7, column=4, sticky="we")
         # frequency domain:
         self.var_plot_freq = tk.IntVar()
-        self.var_plot_freq.set(2)
+        self.var_plot_freq.set(1)
+        ttk.Radiobutton(self.tab2, text="Spectrum plot",
+                        variable=self.var_plot_freq, value=1, command=self.choose_plot_freq).grid(row=1, column=4,
+                                                                                                  sticky="we")
         ttk.Radiobutton(self.tab2, text="volume plot",
-                        variable=self.var_plot_freq, value=2, command=self.choose_plot_freq).grid(row=1, column=4,
+                        variable=self.var_plot_freq, value=2, command=self.choose_plot_freq).grid(row=2, column=4,
                                                                                                   sticky="we")
         ttk.Radiobutton(self.tab2, text="FC plot",
-                        variable=self.var_plot_freq, value=3, command=self.choose_plot_freq).grid(row=2, column=4,
+                        variable=self.var_plot_freq, value=3, command=self.choose_plot_freq).grid(row=3, column=4,
                                                                                                   sticky="we")
         ttk.Radiobutton(self.tab2, text="BW plot",
-                        variable=self.var_plot_freq, value=4, command=self.choose_plot_freq).grid(row=3, column=4,
+                        variable=self.var_plot_freq, value=4, command=self.choose_plot_freq).grid(row=4, column=4,
                                                                                                   sticky="we")
         ttk.Radiobutton(self.tab2, text="BE plot",
-                        variable=self.var_plot_freq, value=5, command=self.choose_plot_freq).grid(row=4, column=4,
+                        variable=self.var_plot_freq, value=5, command=self.choose_plot_freq).grid(row=5, column=4,
                                                                                                   sticky="we")
         ttk.Radiobutton(self.tab2, text="BER (ERSB) plot",
-                        variable=self.var_plot_freq, value=6, command=self.choose_plot_freq).grid(row=5, column=4,
+                        variable=self.var_plot_freq, value=6, command=self.choose_plot_freq).grid(row=6, column=4,
                                                                                                   sticky="we")
         ttk.Radiobutton(self.tab2, text="SFM plot",
-                        variable=self.var_plot_freq, value=7, command=self.choose_plot_freq).grid(row=6, column=4,
+                        variable=self.var_plot_freq, value=7, command=self.choose_plot_freq).grid(row=7, column=4,
                                                                                                   sticky="we")
         ttk.Radiobutton(self.tab2, text="SCF plot",
-                        variable=self.var_plot_freq, value=8, command=self.choose_plot_freq).grid(row=7, column=4,
+                        variable=self.var_plot_freq, value=8, command=self.choose_plot_freq).grid(row=8, column=4,
                                                                                                   sticky="we")
         #        ttk.Checkbutton(self.tab2, text="Calculate fundamental frequency",
         #                        variable=self.calc_freq, command=self.calc_fund_freq,
@@ -190,23 +205,33 @@ class GUI:
         self.voiced = audio_functions.get_voiced_frames(self.volume, self.zcr)
         self.lster = audio_functions.get_lster(self.audio_normalised, self.ste, self.rate)
         self.hzcr = audio_functions.get_hzcr(self.audio_normalised, self.zcr, self.rate)
+        self.audio_frames = audio_functions_fft.get_frames(self.audio_normalised, self.window_len, self.overlap_len)
+        self.spectrum = [audio_functions_fft.create_spectrum(x, self.rate) for x in self.audio_frames]
+        self.volume_freq = audio_functions_fft.get_f_volume(self.spectrum)
+        self.fc = audio_functions_fft.get_f_centroid(self.spectrum)
+        self.bw = audio_functions_fft.get_effective_bandwidth(self.spectrum, self.fc)
+        self.be = audio_functions_fft.get_band_energy(self.spectrum, 100, 900)
+        self.ber = audio_functions_fft.get_band_energy_ratio(self.spectrum, 100, 900)
+        self.sfm = audio_functions_fft.get_sfm(self.spectrum, 100, 900)
+        self.scf = audio_functions_fft.get_scf(self.spectrum, 100, 900)
         # for choosing a frame with custom length to be plotted:
         self.audio_freq = self.audio_normalised
         scale_limit = len(self.audio_normalised) if self.audio_normalised is not None else 100
-        ttk.Label(self.tab2, text="Select frame to be plotted").grid(row=8, column=4, sticky="we")
+        ttk.Label(self.tab2, text="Select frame to be plotted").grid(row=9, column=4, sticky="we")
         self.scaler = tk.Scale(self.tab2, from_=0, to=scale_limit, orient="horizontal")
         self.scaler.bind("<ButtonRelease-1>", self.choose_frame)
-        self.scaler.grid(row=9, column=4, sticky="we")
-        ttk.Label(self.tab2, text="Choose a length of a frame").grid(row=10, column=4, sticky="we")
+        self.scaler.grid(row=10, column=4, sticky="we")
+        ttk.Label(self.tab2, text="Choose a length of a frame for spectrum plot (displayed on a plot in green)")\
+            .grid(row=11, column=4, sticky="we")
         self.frame_length = ttk.Entry(self.tab2)
         self.frame_length.insert(0, "2048")
-        self.frame_length.grid(row=11, column=4, sticky="we")
-        ttk.Button(self.tab2, text="Apply", command=self.validate).grid(row=12, column=4, sticky="we")
+        self.frame_length.grid(row=12, column=4, sticky="we")
+        ttk.Button(self.tab2, text="Apply", command=self.validate).grid(row=13, column=4, sticky="we")
         self.plot_whole = tk.IntVar()
         self.plot_whole.set(1)
         ttk.Checkbutton(self.tab2, text="Plot whole audio signal",
                         variable=self.plot_whole, command=self.choose_frame_temp,
-                        onvalue=1, offvalue=0).grid(row=13, column=4, sticky="we")
+                        onvalue=1, offvalue=0).grid(row=14, column=4, sticky="we")
         vol_treshold = 0.0027779313126452465
         zcr_treshold = 0.13151927437641722
         self.silence = audio_functions.get_silence_frames(self.volume, self.zcr, vol_treshold, zcr_treshold)
@@ -235,13 +260,14 @@ class GUI:
     def choose_frame(self, event):
         if self.plot_whole.get() == 1:
             self.scaler.configure(state="disabled")
-            self.audio_freq = self.audio_normalised
+            audio_freq = self.audio_normalised
         else:
             self.scaler.configure(state="active")
             from_ = self.scaler.get()
             to = from_ + int(self.frame_length.get())
-            self.audio_freq = self.audio_normalised[from_:to]
-        self.plot_basic_freq()
+            audio_freq = self.audio_normalised[from_:to]
+        self.spectrum_plot = audio_functions_fft.create_spectrum(audio_freq, self.rate)
+        self.choose_plot_freq()
 
     def choose_plot(self):
         """
@@ -271,7 +297,9 @@ class GUI:
         """
         self.plot_basic_freq()
         value = self.var_plot_freq.get()
-        if value == 2:
+        if value == 1:
+            self.plot_spectrum()
+        elif value == 2:
             self.plot_volume_freq()
         elif value == 3:
             self.plot_fc()
@@ -291,6 +319,7 @@ class GUI:
         value = self.window_type.get()
         self.audio_windowed = window_functions.get_windowed_audio(self.audio_normalised, self.window_len, value)
         self.plot_window_time()
+        self.plot_window_freq()
 
     def plot_basic(self):
         """
@@ -329,10 +358,10 @@ class GUI:
         plot1 = fig.add_subplot(111)
         if self.times is not None and self.audio_normalised is not None:
             plot1.plot(self.audio_normalised)
-        #            plot1.plot(self.times, self.audio_freq)
-        #            plot1.set_xlim([0, max(self.times)])
+            plot1.plot(self.times, self.audio_normalised)
+            plot1.set_xlim([0, max(self.times)])
         # choose parameter displayed as red background, based on choice from a button (used in every plotting function)
-        cmap = ListedColormap(['white', 'red'])
+        cmap = ListedColormap(['white', 'green'])
         if self.plot_whole is not None and self.plot_whole.get() == 0:
             green_marked = [0 for i in range(len(self.audio_normalised))]
             for i in range(len(self.audio_normalised)):
@@ -528,19 +557,21 @@ class GUI:
         """
         fig = Figure(figsize=(7, 3), dpi=100)
         plot1 = fig.add_subplot(111)
-        if self.volume is not None:
-            xaxis = np.linspace(0, self.duration, num=len(self.volume))
-            plot1.plot(xaxis, self.volume)
-            plot1.set_xlim([0, max(xaxis)])
-        cmap = ListedColormap(['white', 'red'])
-        if self.silence is not None and self.value_red.get() == 1:
-            plot1.pcolorfast(plot1.get_xlim(), plot1.get_ylim(), pd.DataFrame(self.silence).values[np.newaxis],
-                             cmap=cmap, alpha=0.4)
-        if self.voiced is not None and self.value_red.get() == 2:
-            plot1.pcolorfast(plot1.get_xlim(), plot1.get_ylim(), pd.DataFrame(self.voiced).values[np.newaxis],
-                             cmap=cmap, alpha=0.4)
+#        if self.volume is not None:
+#            xaxis = np.linspace(0, self.duration, num=len(self.volume))
+#            plot1.plot(xaxis, self.volume)
+#            plot1.set_xlim([0, max(xaxis)])
+        if self.volume_freq is not None:
+            plot1.plot(self.volume_freq)
+#        cmap = ListedColormap(['white', 'red'])
+#        if self.silence is not None and self.value_red.get() == 1:
+#            plot1.pcolorfast(plot1.get_xlim(), plot1.get_ylim(), pd.DataFrame(self.silence).values[np.newaxis],
+#                             cmap=cmap, alpha=0.4)
+#        if self.voiced is not None and self.value_red.get() == 2:
+#            plot1.pcolorfast(plot1.get_xlim(), plot1.get_ylim(), pd.DataFrame(self.voiced).values[np.newaxis],
+#                             cmap=cmap, alpha=0.4)
         plot1.set_ylabel("Volume")
-        plot1.set_xlabel("Time (s)")
+        plot1.set_xlabel("")
         plot1.xaxis.set_label_position('top')
         canvas = FigureCanvasTkAgg(fig, master=self.tab2)
         canvas.draw()
@@ -557,19 +588,21 @@ class GUI:
         """
         fig = Figure(figsize=(7, 3), dpi=100)
         plot1 = fig.add_subplot(111)
-        if self.volume is not None:
-            xaxis = np.linspace(0, self.duration, num=len(self.volume))
-            plot1.plot(xaxis, self.volume)
-            plot1.set_xlim([0, max(xaxis)])
-        cmap = ListedColormap(['white', 'red'])
-        if self.silence is not None and self.value_red.get() == 1:
-            plot1.pcolorfast(plot1.get_xlim(), plot1.get_ylim(), pd.DataFrame(self.silence).values[np.newaxis],
-                             cmap=cmap, alpha=0.4)
-        if self.voiced is not None and self.value_red.get() == 2:
-            plot1.pcolorfast(plot1.get_xlim(), plot1.get_ylim(), pd.DataFrame(self.voiced).values[np.newaxis],
-                             cmap=cmap, alpha=0.4)
-        plot1.set_ylabel("Volume")
-        plot1.set_xlabel("Time (s)")
+        if self.fc is not None:
+            plot1.plot(self.fc)
+#        if self.volume is not None:
+#            xaxis = np.linspace(0, self.duration, num=len(self.volume))
+#            plot1.plot(xaxis, self.volume)
+#            plot1.set_xlim([0, max(xaxis)])
+#        cmap = ListedColormap(['white', 'red'])
+#        if self.silence is not None and self.value_red.get() == 1:
+#            plot1.pcolorfast(plot1.get_xlim(), plot1.get_ylim(), pd.DataFrame(self.silence).values[np.newaxis],
+#                             cmap=cmap, alpha=0.4)
+#        if self.voiced is not None and self.value_red.get() == 2:
+#            plot1.pcolorfast(plot1.get_xlim(), plot1.get_ylim(), pd.DataFrame(self.voiced).values[np.newaxis],
+#                             cmap=cmap, alpha=0.4)
+        plot1.set_ylabel("Frequency Centroid")
+        plot1.set_xlabel("")
         plot1.xaxis.set_label_position('top')
         canvas = FigureCanvasTkAgg(fig, master=self.tab2)
         canvas.draw()
@@ -586,19 +619,21 @@ class GUI:
         """
         fig = Figure(figsize=(7, 3), dpi=100)
         plot1 = fig.add_subplot(111)
-        if self.volume is not None:
-            xaxis = np.linspace(0, self.duration, num=len(self.volume))
-            plot1.plot(xaxis, self.volume)
-            plot1.set_xlim([0, max(xaxis)])
-        cmap = ListedColormap(['white', 'red'])
-        if self.silence is not None and self.value_red.get() == 1:
-            plot1.pcolorfast(plot1.get_xlim(), plot1.get_ylim(), pd.DataFrame(self.silence).values[np.newaxis],
-                             cmap=cmap, alpha=0.4)
-        if self.voiced is not None and self.value_red.get() == 2:
-            plot1.pcolorfast(plot1.get_xlim(), plot1.get_ylim(), pd.DataFrame(self.voiced).values[np.newaxis],
-                             cmap=cmap, alpha=0.4)
-        plot1.set_ylabel("Volume")
-        plot1.set_xlabel("Time (s)")
+        if self.bw is not None:
+            plot1.plot(self.bw)
+#        if self.volume is not None:
+#            xaxis = np.linspace(0, self.duration, num=len(self.volume))
+#            plot1.plot(xaxis, self.volume)
+#            plot1.set_xlim([0, max(xaxis)])
+#        cmap = ListedColormap(['white', 'red'])
+#        if self.silence is not None and self.value_red.get() == 1:
+#            plot1.pcolorfast(plot1.get_xlim(), plot1.get_ylim(), pd.DataFrame(self.silence).values[np.newaxis],
+#                             cmap=cmap, alpha=0.4)
+#        if self.voiced is not None and self.value_red.get() == 2:
+#            plot1.pcolorfast(plot1.get_xlim(), plot1.get_ylim(), pd.DataFrame(self.voiced).values[np.newaxis],
+#                             cmap=cmap, alpha=0.4)
+        plot1.set_ylabel("Effective Bandwidth")
+        plot1.set_xlabel("")
         plot1.xaxis.set_label_position('top')
         canvas = FigureCanvasTkAgg(fig, master=self.tab2)
         canvas.draw()
@@ -615,19 +650,21 @@ class GUI:
         """
         fig = Figure(figsize=(7, 3), dpi=100)
         plot1 = fig.add_subplot(111)
-        if self.volume is not None:
-            xaxis = np.linspace(0, self.duration, num=len(self.volume))
-            plot1.plot(xaxis, self.volume)
-            plot1.set_xlim([0, max(xaxis)])
-        cmap = ListedColormap(['white', 'red'])
-        if self.silence is not None and self.value_red.get() == 1:
-            plot1.pcolorfast(plot1.get_xlim(), plot1.get_ylim(), pd.DataFrame(self.silence).values[np.newaxis],
-                             cmap=cmap, alpha=0.4)
-        if self.voiced is not None and self.value_red.get() == 2:
-            plot1.pcolorfast(plot1.get_xlim(), plot1.get_ylim(), pd.DataFrame(self.voiced).values[np.newaxis],
-                             cmap=cmap, alpha=0.4)
-        plot1.set_ylabel("Volume")
-        plot1.set_xlabel("Time (s)")
+        if self.be is not None:
+            plot1.plot(self.be)
+#        if self.volume is not None:
+#            xaxis = np.linspace(0, self.duration, num=len(self.volume))
+#            plot1.plot(xaxis, self.volume)
+#            plot1.set_xlim([0, max(xaxis)])
+#        cmap = ListedColormap(['white', 'red'])
+#        if self.silence is not None and self.value_red.get() == 1:
+#            plot1.pcolorfast(plot1.get_xlim(), plot1.get_ylim(), pd.DataFrame(self.silence).values[np.newaxis],
+#                             cmap=cmap, alpha=0.4)
+#        if self.voiced is not None and self.value_red.get() == 2:
+#            plot1.pcolorfast(plot1.get_xlim(), plot1.get_ylim(), pd.DataFrame(self.voiced).values[np.newaxis],
+#                             cmap=cmap, alpha=0.4)
+        plot1.set_ylabel("Band Energy")
+        plot1.set_xlabel("")
         plot1.xaxis.set_label_position('top')
         canvas = FigureCanvasTkAgg(fig, master=self.tab2)
         canvas.draw()
@@ -644,19 +681,21 @@ class GUI:
         """
         fig = Figure(figsize=(7, 3), dpi=100)
         plot1 = fig.add_subplot(111)
-        if self.volume is not None:
-            xaxis = np.linspace(0, self.duration, num=len(self.volume))
-            plot1.plot(xaxis, self.volume)
-            plot1.set_xlim([0, max(xaxis)])
-        cmap = ListedColormap(['white', 'red'])
-        if self.silence is not None and self.value_red.get() == 1:
-            plot1.pcolorfast(plot1.get_xlim(), plot1.get_ylim(), pd.DataFrame(self.silence).values[np.newaxis],
-                             cmap=cmap, alpha=0.4)
-        if self.voiced is not None and self.value_red.get() == 2:
-            plot1.pcolorfast(plot1.get_xlim(), plot1.get_ylim(), pd.DataFrame(self.voiced).values[np.newaxis],
-                             cmap=cmap, alpha=0.4)
-        plot1.set_ylabel("Volume")
-        plot1.set_xlabel("Time (s)")
+        if self.ber is not None:
+            plot1.plot(self.ber)
+#        if self.volume is not None:
+#            xaxis = np.linspace(0, self.duration, num=len(self.volume))
+#            plot1.plot(xaxis, self.volume)
+#            plot1.set_xlim([0, max(xaxis)])
+#        cmap = ListedColormap(['white', 'red'])
+#        if self.silence is not None and self.value_red.get() == 1:
+#            plot1.pcolorfast(plot1.get_xlim(), plot1.get_ylim(), pd.DataFrame(self.silence).values[np.newaxis],
+#                             cmap=cmap, alpha=0.4)
+#        if self.voiced is not None and self.value_red.get() == 2:
+#            plot1.pcolorfast(plot1.get_xlim(), plot1.get_ylim(), pd.DataFrame(self.voiced).values[np.newaxis],
+#                             cmap=cmap, alpha=0.4)
+        plot1.set_ylabel("Band Energy Ratio")
+        plot1.set_xlabel("")
         plot1.xaxis.set_label_position('top')
         canvas = FigureCanvasTkAgg(fig, master=self.tab2)
         canvas.draw()
@@ -673,19 +712,21 @@ class GUI:
         """
         fig = Figure(figsize=(7, 3), dpi=100)
         plot1 = fig.add_subplot(111)
-        if self.volume is not None:
-            xaxis = np.linspace(0, self.duration, num=len(self.volume))
-            plot1.plot(xaxis, self.volume)
-            plot1.set_xlim([0, max(xaxis)])
-        cmap = ListedColormap(['white', 'red'])
-        if self.silence is not None and self.value_red.get() == 1:
-            plot1.pcolorfast(plot1.get_xlim(), plot1.get_ylim(), pd.DataFrame(self.silence).values[np.newaxis],
-                             cmap=cmap, alpha=0.4)
-        if self.voiced is not None and self.value_red.get() == 2:
-            plot1.pcolorfast(plot1.get_xlim(), plot1.get_ylim(), pd.DataFrame(self.voiced).values[np.newaxis],
-                             cmap=cmap, alpha=0.4)
-        plot1.set_ylabel("Volume")
-        plot1.set_xlabel("Time (s)")
+        if self.sfm is not None:
+            plot1.plot(self.sfm)
+#        if self.volume is not None:
+#            xaxis = np.linspace(0, self.duration, num=len(self.volume))
+#            plot1.plot(xaxis, self.volume)
+#            plot1.set_xlim([0, max(xaxis)])
+#        cmap = ListedColormap(['white', 'red'])
+#        if self.silence is not None and self.value_red.get() == 1:
+#            plot1.pcolorfast(plot1.get_xlim(), plot1.get_ylim(), pd.DataFrame(self.silence).values[np.newaxis],
+#                             cmap=cmap, alpha=0.4)
+#        if self.voiced is not None and self.value_red.get() == 2:
+#            plot1.pcolorfast(plot1.get_xlim(), plot1.get_ylim(), pd.DataFrame(self.voiced).values[np.newaxis],
+#                             cmap=cmap, alpha=0.4)
+        plot1.set_ylabel("Spectral Flatness Measure")
+        plot1.set_xlabel("")
         plot1.xaxis.set_label_position('top')
         canvas = FigureCanvasTkAgg(fig, master=self.tab2)
         canvas.draw()
@@ -702,19 +743,40 @@ class GUI:
         """
         fig = Figure(figsize=(7, 3), dpi=100)
         plot1 = fig.add_subplot(111)
-        if self.volume is not None:
-            xaxis = np.linspace(0, self.duration, num=len(self.volume))
-            plot1.plot(xaxis, self.volume)
-            plot1.set_xlim([0, max(xaxis)])
-        cmap = ListedColormap(['white', 'red'])
-        if self.silence is not None and self.value_red.get() == 1:
-            plot1.pcolorfast(plot1.get_xlim(), plot1.get_ylim(), pd.DataFrame(self.silence).values[np.newaxis],
-                             cmap=cmap, alpha=0.4)
-        if self.voiced is not None and self.value_red.get() == 2:
-            plot1.pcolorfast(plot1.get_xlim(), plot1.get_ylim(), pd.DataFrame(self.voiced).values[np.newaxis],
-                             cmap=cmap, alpha=0.4)
-        plot1.set_ylabel("Volume")
-        plot1.set_xlabel("Time (s)")
+        if self.scf is not None:
+            plot1.plot(self.scf)
+#        if self.volume is not None:
+#            xaxis = np.linspace(0, self.duration, num=len(self.volume))
+#            plot1.plot(xaxis, self.volume)
+#            plot1.set_xlim([0, max(xaxis)])
+#        cmap = ListedColormap(['white', 'red'])
+#        if self.silence is not None and self.value_red.get() == 1:
+#            plot1.pcolorfast(plot1.get_xlim(), plot1.get_ylim(), pd.DataFrame(self.silence).values[np.newaxis],
+#                             cmap=cmap, alpha=0.4)
+#        if self.voiced is not None and self.value_red.get() == 2:
+#            plot1.pcolorfast(plot1.get_xlim(), plot1.get_ylim(), pd.DataFrame(self.voiced).values[np.newaxis],
+#                             cmap=cmap, alpha=0.4)
+        plot1.set_ylabel("Spectral Crest Factor")
+        plot1.set_xlabel("")
+        plot1.xaxis.set_label_position('top')
+        canvas = FigureCanvasTkAgg(fig, master=self.tab2)
+        canvas.draw()
+        canvas.get_tk_widget().grid(row=10, column=10, rowspan=8, columnspan=3, pady=10, padx=10, sticky="nsew")
+        toolbar_frame = Frame(master=self.tab2)
+        toolbar_frame.grid(row=18, column=1)
+        toolbar = Toolbar(canvas, toolbar_frame)
+        toolbar.update()
+        canvas.get_tk_widget().grid(row=10, column=1)
+
+
+    def plot_spectrum(self):
+        fig = Figure(figsize=(7, 3), dpi=100)
+        plot1 = fig.add_subplot(111)
+        if self.spectrum_plot is not None:
+            plot1.plot(self.spectrum_plot[1], self.spectrum_plot[0])
+        plot1.set_ylabel("Magnitude")
+        plot1.set_xlabel("Frequency")
+        plot1.set_title("Spectrum")
         plot1.xaxis.set_label_position('top')
         canvas = FigureCanvasTkAgg(fig, master=self.tab2)
         canvas.draw()
@@ -733,10 +795,6 @@ class GUI:
         plot1 = fig.add_subplot(111)
         if self.times is not None and self.audio_windowed is not None:
             plot1.plot(self.audio_windowed)
-        #            plot1.plot(self.times, self.audio_freq)
-        #            plot1.set_xlim([0, max(self.times)])
-        # choose parameter displayed as red background, based on choice from a button (used in every plotting function)
-        cmap = ListedColormap(['white', 'red'])
         plot1.xaxis.set_label_position('top')
         plot1.set_ylabel("Amplitude")
         plot1.set_xlabel("Time (s)")
@@ -750,7 +808,22 @@ class GUI:
         canvas.get_tk_widget().grid(row=1, column=1)
 
     def plot_window_freq(self):
-        pass
+        fig = Figure(figsize=(7, 3), dpi=100)
+        plot1 = fig.add_subplot(111)
+        if self.audio_windowed is not None:
+            spectrum = audio_functions_fft.create_spectrum(self.audio_windowed, self.rate)
+            plot1.plot(spectrum[1], spectrum[0])
+        plot1.xaxis.set_label_position('top')
+        plot1.set_ylabel("Magnitude")
+        plot1.set_xlabel("Frequency")
+        canvas = FigureCanvasTkAgg(fig, master=self.tab3)
+        canvas.draw()
+        canvas.get_tk_widget().grid(row=10, column=1, rowspan=6, columnspan=3, padx=10, pady=10, sticky="nsew")
+        toolbar_frame = Frame(master=self.tab3)
+        toolbar_frame.grid(row=18, column=1)
+        toolbar = Toolbar(canvas, toolbar_frame)
+        toolbar.update()
+        canvas.get_tk_widget().grid(row=10, column=1)
 
 
 def main():
