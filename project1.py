@@ -553,7 +553,7 @@ class GUI:
 
     def plot_volume_freq(self):
         """
-        a function that plots volume of a sound
+        a function that plots volume of a sound (in frequency domain
         """
         fig = Figure(figsize=(7, 3), dpi=100)
         plot1 = fig.add_subplot(111)
@@ -584,7 +584,7 @@ class GUI:
 
     def plot_fc(self):
         """
-        a function that plots volume of a sound
+        a function that plots Frequency Centroid of a sound
         """
         fig = Figure(figsize=(7, 3), dpi=100)
         plot1 = fig.add_subplot(111)
@@ -615,7 +615,7 @@ class GUI:
 
     def plot_bw(self):
         """
-        a function that plots volume of a sound
+        a function that plots Effective Bandwidth of a sound
         """
         fig = Figure(figsize=(7, 3), dpi=100)
         plot1 = fig.add_subplot(111)
@@ -646,7 +646,7 @@ class GUI:
 
     def plot_be(self):
         """
-        a function that plots volume of a sound
+        a function that plots Band Energy of a sound
         """
         fig = Figure(figsize=(7, 3), dpi=100)
         plot1 = fig.add_subplot(111)
@@ -677,7 +677,7 @@ class GUI:
 
     def plot_ber(self):
         """
-        a function that plots volume of a sound
+        a function that plots Band Energy Ratio of a sound
         """
         fig = Figure(figsize=(7, 3), dpi=100)
         plot1 = fig.add_subplot(111)
@@ -708,7 +708,7 @@ class GUI:
 
     def plot_sfm(self):
         """
-        a function that plots volume of a sound
+        a function that plots Spectral Flatness Measure of a sound
         """
         fig = Figure(figsize=(7, 3), dpi=100)
         plot1 = fig.add_subplot(111)
@@ -739,7 +739,7 @@ class GUI:
 
     def plot_scf(self):
         """
-        a function that plots volume of a sound
+        a function that plots Spectral Crest Factor of a sound
         """
         fig = Figure(figsize=(7, 3), dpi=100)
         plot1 = fig.add_subplot(111)
@@ -770,6 +770,9 @@ class GUI:
 
 
     def plot_spectrum(self):
+        """
+        A function that plots the spectrum of a sound
+        """
         fig = Figure(figsize=(7, 3), dpi=100)
         plot1 = fig.add_subplot(111)
         if self.spectrum_plot is not None:
@@ -789,7 +792,7 @@ class GUI:
 
     def plot_window_time(self):
         """
-        a function that plots amplitudes of a .wav file
+        a function that plots amplitudes after applying window function
         """
         fig = Figure(figsize=(7, 3), dpi=100)
         plot1 = fig.add_subplot(111)
@@ -808,6 +811,9 @@ class GUI:
         canvas.get_tk_widget().grid(row=1, column=1)
 
     def plot_window_freq(self):
+        """
+        a function that plots audio spectrum after applying window function
+        """
         fig = Figure(figsize=(7, 3), dpi=100)
         plot1 = fig.add_subplot(111)
         if self.audio_windowed is not None:
